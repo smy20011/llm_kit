@@ -6,7 +6,7 @@
 import unittest
 import asyncio
 
-from llm_kit import CompletionEngine, complete, Prompter
+from llm_kit import CompletionEngine, complete, Prompter, middleware
 
 
 class FakeEngine(CompletionEngine):
@@ -43,3 +43,50 @@ class MyTests(unittest.IsolatedAsyncioTestCase):
         prompter = TestPrompter(FakeEngine())
         result = prompter.say_hello()
         self.assertEqual(result, "Hello World")
+
+    def test_middleware(self):
+        @middleware
+        async def upper(func, prompt):
+            return (await func(prompt)).upper()
+
+        class TestPrompter(Prompter):
+            @complete
+            @upper
+            def say_hello(self):
+                return "Say hello to the world"
+        prompter = TestPrompter(FakeEngine())
+        result = prompter.say_hello()
+        self.assertEqual(result, "HELLO WORLD")
+
+    def test_middleware_order(self):
+        @middleware
+        async def upper(func, prompt):
+            return (await func(prompt)).upper()
+
+        class TestPrompter(Prompter):
+            @upper
+            @complete
+            def say_hello(self):
+                return "Say hello to the world"
+        prompter = TestPrompter(FakeEngine())
+        result = prompter.say_hello()
+        self.assertEqual(result, "HELLO WORLD")
+
+    def test_middleware_mult(self):
+        @middleware
+        async def upper(func, prompt):
+            return (await func(prompt)).upper()
+
+        @middleware
+        async def lower(func, prompt):
+            return (await func(prompt)).lower()
+
+        class TestPrompter(Prompter):
+            @lower
+            @upper
+            @complete
+            def say_hello(self):
+                return "Say hello to the world"
+        prompter = TestPrompter(FakeEngine())
+        result = prompter.say_hello()
+        self.assertEqual(result, "hello world")
