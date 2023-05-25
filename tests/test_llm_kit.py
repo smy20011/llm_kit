@@ -37,7 +37,7 @@ class MyTests(unittest.IsolatedAsyncioTestCase):
 
     def test_complete_sync(self):
         class TestPrompter(Prompter):
-            @complete()
+            @complete
             def say_hello(self):
                 return "Say hello to the world"
         prompter = TestPrompter(FakeEngine())
